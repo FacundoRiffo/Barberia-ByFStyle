@@ -57,7 +57,7 @@ function StatCard({ icon, label, value, sub, color = 'gold' }) {
 
 export default function DashboardPage() {
   const { currentBarber } = useAuth();
-  const [viewMode, setViewMode] = useState('day'); // 'day' | 'month'
+  const [viewMode, setViewMode] = useState('day'); // 'day' | 'week' | 'month' | 'year'
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,10 +69,11 @@ export default function DashboardPage() {
 
   const todayStr = getTodayStr();
   const currentMonth = getCurrentYearMonth();
+  const [selectedDate, setSelectedDate] = useState(todayStr);
 
   useEffect(() => {
     loadData();
-  }, [viewMode, currentBarber]);
+  }, [viewMode, currentBarber, selectedDate]);
 
   async function loadData() {
     if (!currentBarber) return;
@@ -82,9 +83,9 @@ export default function DashboardPage() {
 
       if (viewMode === 'day') {
         [transactions, expenses, appointments] = await Promise.all([
-          getTransactionsByBarberAndDate(currentBarber.id, todayStr),
-          getExpensesByBarberAndDate(currentBarber.id, todayStr),
-          getAppointmentsByBarberAndDate(currentBarber.id, todayStr),
+          getTransactionsByBarberAndDate(currentBarber.id, selectedDate),
+          getExpensesByBarberAndDate(currentBarber.id, selectedDate),
+          getAppointmentsByBarberAndDate(currentBarber.id, selectedDate),
         ]);
       } else if (viewMode === 'week') {
         const { start, end } = getWeekRange();
@@ -169,8 +170,10 @@ export default function DashboardPage() {
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             {viewMode === 'day'
-              ? `Resumen del día — ${new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}`
-              : `Resumen del mes — ${new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}`}
+              ? `Resumen del día — ${new Date(selectedDate + 'T12:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}`
+              : viewMode === 'month'
+                ? `Resumen del mes — ${new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}`
+                : viewMode === 'week' ? 'Resumen de la semana' : 'Resumen del año'}
           </p>
         </div>
 
@@ -216,6 +219,38 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {viewMode === 'day' && (
+        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-6 pb-2">
+          {Array.from({ length: 7 }).map((_, i) => {
+            const date = new Date();
+            date.setDate(date.getDate() - 2 + i); // Empezar hace 2 días y seguir adelante
+            const dStr = date.toISOString().split('T')[0];
+            const isSelected = selectedDate === dStr;
+            const isToday = dStr === todayStr;
+            const dayName = date.toLocaleDateString('es-AR', { weekday: 'short' });
+            const dayNumber = date.getDate();
+            return (
+              <button
+                key={dStr}
+                onClick={() => setSelectedDate(dStr)}
+                className={`min-w-[80px] flex flex-col items-center justify-center py-3 rounded-xl border transition-all
+                  ${isSelected
+                    ? 'bg-gold/10 border-gold text-gold shadow-md'
+                    : 'bg-bg-elevated border-white/5 text-gray-400 hover:border-gold/30 hover:text-white'
+                  }`}
+              >
+                <span className="text-xs font-medium uppercase tracking-wider mb-1">
+                  {isToday ? 'Hoy' : dayName}
+                </span>
+                <span className={`text-xl font-bold ${isSelected ? 'text-white' : ''}`}>
+                  {dayNumber}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-20">

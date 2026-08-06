@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BARBERS, SERVICES, PAYMENT_METHODS, getBarberServices, formatPrice, generateTimeSlots } from '../../data/constants';
-import { addAppointment, getAppointmentsByBarberAndDate } from '../../data/firebase';
+import { addAppointment, getAppointmentsByBarberAndDate, isSlotAvailable } from '../../data/firebase';
 import { useToast } from '../../context/ToastContext';
 
 const STEPS = ['Datos', 'Barbero', 'Servicio', 'Fecha y Hora', 'Confirmar'];
@@ -67,6 +67,16 @@ export default function BookingPage() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      // Verify slot availability immediately before saving
+      const available = await isSlotAvailable(formData.barberId, formData.date, formData.time);
+      if (!available) {
+        addToast('Lo sentimos, este turno acaba de ser reservado. Por favor, elegí otro horario.', 'error');
+        setFormData({ ...formData, time: '' });
+        setStep(3); // Go back to time selection
+        setLoading(false);
+        return;
+      }
+
       const yearMonth = formData.date.substring(0, 7);
       const appointmentId = await addAppointment({
         clientName: formData.clientName.trim(),

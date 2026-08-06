@@ -127,12 +127,12 @@ export default function BookingPage() {
                 >
                   {i < step ? '✓' : i + 1}
                 </div>
-                <span className={`text-[10px] sm:text-xs mt-1.5 ${i <= step ? 'text-gold' : 'text-gray-600'}`}>
+                <span className={`hidden sm:block text-xs mt-1.5 ${i <= step ? 'text-gold' : 'text-gray-600'}`}>
                   {label}
                 </span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-6 sm:w-12 h-px mx-1 sm:mx-2 mb-5 transition-colors ${i < step ? 'bg-gold' : 'bg-white/10'}`} />
+                <div className={`w-4 sm:w-12 h-px mx-1 sm:mx-2 mb-0 sm:mb-5 transition-colors ${i < step ? 'bg-gold' : 'bg-white/10'}`} />
               )}
             </div>
           ))}
@@ -255,7 +255,7 @@ export default function BookingPage() {
               {formData.date && (
                 <div className="animate-fade-in">
                   <label className="block text-sm text-gray-400 mb-3">Horario disponible</label>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3">
                     {allSlots.map((slot) => {
                       const isBooked = bookedSlots.includes(slot);
                       return (

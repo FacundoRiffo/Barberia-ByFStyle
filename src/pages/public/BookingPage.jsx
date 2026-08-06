@@ -175,7 +175,10 @@ export default function BookingPage() {
                 {BARBERS.map((barber) => (
                   <button
                     key={barber.id}
-                    onClick={() => setFormData({ ...formData, barberId: barber.id, serviceId: '' })}
+                    onClick={() => {
+                      setFormData({ ...formData, barberId: barber.id, serviceId: '' });
+                      setTimeout(() => setStep(2), 200);
+                    }}
                     className={`p-6 rounded-2xl border-2 text-center transition-all duration-300 hover:scale-[1.02]
                       ${formData.barberId === barber.id
                         ? 'border-gold bg-gold/10 shadow-[0_0_20px_rgba(201,168,76,0.15)]'
@@ -202,7 +205,10 @@ export default function BookingPage() {
                 {availableServices.map((service) => (
                   <button
                     key={service.id}
-                    onClick={() => setFormData({ ...formData, serviceId: service.id })}
+                    onClick={() => {
+                      setFormData({ ...formData, serviceId: service.id });
+                      setTimeout(() => setStep(3), 200);
+                    }}
                     className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all duration-200
                       ${formData.serviceId === service.id
                         ? 'border-gold bg-gold/10'

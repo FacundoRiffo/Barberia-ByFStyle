@@ -16,8 +16,10 @@ export default function ConfirmationPage() {
     year: 'numeric',
   });
 
+  const sena = appointment.price * 0.3;
+
   const whatsappMessage = encodeURIComponent(
-    `Hola, soy ${appointment.clientName}. Acabo de reservar un turno para ${appointment.serviceName} con ${appointment.barberName} el día ${formattedDate} a las ${appointment.time} hs.`
+    `Hola, soy ${appointment.clientName}. Acabo de reservar un turno para ${appointment.serviceName} con ${appointment.barberName} el día ${formattedDate} a las ${appointment.time} hs. Aquí te envío el comprobante de la seña.`
   );
   const whatsappUrl = `https://wa.me/5492665025201?text=${whatsappMessage}`;
 
@@ -83,17 +85,31 @@ export default function ConfirmationPage() {
               <span className="text-gray-500 text-sm">🕐 Hora</span>
               <span className="text-white text-sm font-medium">{appointment.time} hs</span>
             </div>
-            <div className="flex justify-between py-3">
-              <span className="text-gray-500 text-sm">💰 Precio</span>
-              <span className="text-xl font-bold gold-text-gradient">{formatPrice(appointment.price)}</span>
+            <div className="flex justify-between py-2 border-b border-white/5">
+              <span className="text-gray-500 text-sm">💰 Precio Total</span>
+              <span className="text-white text-sm font-medium">{formatPrice(appointment.price)}</span>
             </div>
+            <div className="flex justify-between py-3">
+              <span className="text-gold font-medium text-sm">⚠️ Seña a transferir</span>
+              <span className="text-xl font-bold gold-text-gradient">{formatPrice(sena)}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-bg-primary rounded-xl border border-white/5">
+            <p className="text-gray-400 text-xs text-center mb-2">Para confirmar el turno, transferir la seña a:</p>
+            <p className="text-white font-mono font-bold text-center bg-white/5 py-2 rounded-lg tracking-wider text-sm mb-1">
+              ALIAS: facu.riffo.
+            </p>
+            <p className="text-gray-500 text-xs text-center font-medium">
+              A nombre de: Facundo Valentin Riffo
+            </p>
           </div>
 
           {/* Decorative dashed line */}
           <div className="border-t-2 border-dashed border-white/10 my-4" />
 
           <p className="text-center text-gray-500 text-xs">
-            Presentá este comprobante al llegar. ¡Te esperamos!
+            ¡Importante! Tu turno quedará confirmado una vez envíes el comprobante de pago por WhatsApp.
           </p>
         </div>
 

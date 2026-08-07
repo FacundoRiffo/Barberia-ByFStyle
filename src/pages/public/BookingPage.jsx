@@ -242,31 +242,39 @@ export default function BookingPage() {
             <div className="animate-fade-in space-y-5">
               <h2 className="text-xl font-semibold text-white mb-2">Fecha y hora</h2>
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Fecha</label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  min={today}
-                  max={maxDate}
-                  onChange={(e) => {
-                    const dateVal = e.target.value;
-                    if (dateVal) {
-                      if (dateVal < today || dateVal > maxDate) {
-                        addToast('La fecha debe estar dentro de los próximos 7 días', 'error');
-                        setFormData({ ...formData, date: '', time: '' });
-                        return;
-                      }
-                      const selectedDate = new Date(dateVal + 'T12:00');
-                      if (selectedDate.getDay() === 0) { // Sunday
-                        addToast('Los domingos no abrimos', 'warning');
-                        setFormData({ ...formData, date: '', time: '' });
-                        return;
-                      }
-                    }
-                    setFormData({ ...formData, date: dateVal, time: '' });
-                  }}
-                  className="w-full px-4 py-3 rounded-xl text-sm"
-                />
+                <label className="block text-sm text-gray-400 mb-3">Fecha</label>
+                <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-2">
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const dateObj = new Date();
+                    dateObj.setDate(todayDate.getDate() + i);
+                    const dStr = dateObj.toISOString().split('T')[0];
+                    const isSelected = formData.date === dStr;
+                    const isSunday = dateObj.getDay() === 0;
+                    const dayName = dateObj.toLocaleDateString('es-AR', { weekday: 'short' });
+                    const dayNumber = dateObj.getDate();
+                    
+                    return (
+                      <button
+                        key={dStr}
+                        disabled={isSunday}
+                        onClick={() => setFormData({ ...formData, date: dStr, time: '' })}
+                        className={`min-w-[70px] flex flex-col items-center justify-center py-3 rounded-xl border transition-all
+                          ${isSunday ? 'opacity-30 cursor-not-allowed bg-white/5 border-white/5' 
+                          : isSelected
+                            ? 'bg-gold/10 border-gold text-gold shadow-md'
+                            : 'bg-bg-elevated border-white/5 text-gray-400 hover:border-gold/30 hover:text-white'
+                          }`}
+                      >
+                        <span className="text-xs font-medium uppercase tracking-wider mb-1">
+                          {i === 0 ? 'Hoy' : dayName}
+                        </span>
+                        <span className={`text-xl font-bold ${isSelected ? 'text-white' : ''}`}>
+                          {dayNumber}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               {formData.date && (
                 <div className="animate-fade-in">
@@ -328,11 +336,18 @@ export default function BookingPage() {
                   <span className="text-gray-400 text-sm">Hora</span>
                   <span className="text-white font-medium">{formData.time} hs</span>
                 </div>
+                <div className="flex justify-between items-center py-2 border-b border-white/5">
+                  <span className="text-gray-400 text-sm">Precio Total</span>
+                  <span className="text-white font-medium">{formatPrice(selectedService?.price || 0)}</span>
+                </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-400 text-sm">Precio</span>
-                  <span className="text-2xl font-bold gold-text-gradient">{formatPrice(selectedService?.price || 0)}</span>
+                  <span className="text-gold font-medium text-sm">Seña requerida (30%)</span>
+                  <span className="text-2xl font-bold gold-text-gradient">{formatPrice((selectedService?.price || 0) * 0.3)}</span>
                 </div>
               </div>
+              <p className="text-xs text-gray-500 mt-4 text-center">
+                Te daremos nuestro ALIAS en el siguiente paso para abonar la seña y confirmar el turno.
+              </p>
             </div>
           )}
 

@@ -72,13 +72,28 @@ export default function AppointmentsPage() {
     }
   }
 
-  async function handleCancel(appointmentId) {
-    if (!confirm('¿Cancelar este turno?')) return;
-    setProcessingId(appointmentId);
+  async function handleCancel(appointment) {
+    if (!confirm(`¿Cancelar el turno de ${appointment.clientName}?`)) return;
+    setProcessingId(appointment.id);
     try {
-      await cancelAppointment(appointmentId);
+      await cancelAppointment(appointment.id);
       addToast('Turno cancelado', 'warning');
       await loadAppointments();
+
+      if (appointment.clientPhone) {
+        const formattedDate = new Date(appointment.date + 'T12:00').toLocaleDateString('es-AR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long'
+        });
+        const msg = encodeURIComponent(`Hola ${appointment.clientName}, te escribimos de B&F Style. Lamentablemente tuvimos que cancelar tu turno de ${appointment.serviceName} el día ${formattedDate} a las ${appointment.time} hs. Por favor, contáctanos para reprogramar.`);
+        let phone = appointment.clientPhone.replace(/\D/g, '');
+        if (phone.length === 10) {
+          phone = `549${phone}`;
+        }
+        window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+      }
+
     } catch (err) {
       console.error(err);
       addToast('Error al cancelar', 'error');
@@ -275,7 +290,7 @@ export default function AppointmentsPage() {
                     </div>
 
                     <button
-                      onClick={() => handleCancel(apt.id)}
+                      onClick={() => handleCancel(apt)}
                       disabled={processingId === apt.id}
                       className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-all disabled:opacity-50"
                     >

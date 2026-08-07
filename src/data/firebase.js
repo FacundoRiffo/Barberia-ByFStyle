@@ -102,6 +102,16 @@ export async function completeAppointment(appointmentId, paymentMethod) {
   );
 }
 
+export async function confirmSena(appointmentId) {
+  const docRef = ref(db, `${COLLECTIONS.APPOINTMENTS}/${appointmentId}`);
+  await withTimeout(
+    update(docRef, {
+      senaPaid: true,
+      senaConfirmedAt: Date.now(),
+    })
+  );
+}
+
 export async function cancelAppointment(appointmentId) {
   const docRef = ref(db, `${COLLECTIONS.APPOINTMENTS}/${appointmentId}`);
   await withTimeout(update(docRef, { status: 'cancelled' }));

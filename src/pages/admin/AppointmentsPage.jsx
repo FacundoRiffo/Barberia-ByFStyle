@@ -9,6 +9,7 @@ import {
   blockSlot,
   unblockSlot,
   addTransaction,
+  confirmSena,
   getTodayStr,
 } from '../../data/firebase';
 
@@ -67,6 +68,35 @@ export default function AppointmentsPage() {
     } catch (err) {
       console.error(err);
       addToast('Error al completar turno', 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function handleConfirmSena(appointment) {
+    setProcessingId(appointment.id);
+    try {
+      await confirmSena(appointment.id);
+      addToast('Seña confirmada', 'success');
+      await loadAppointments();
+
+      if (appointment.clientPhone) {
+        const formattedDate = new Date(appointment.date + 'T12:00').toLocaleDateString('es-AR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long'
+        });
+        const msg = encodeURIComponent(`¡Hola ${appointment.clientName}! Recibimos tu seña. Tu turno de ${appointment.serviceName} el día ${formattedDate} a las ${appointment.time} hs está CONFIRMADO ✅. ¡Te esperamos en B&F Style!`);
+        let phone = appointment.clientPhone.replace(/\D/g, '');
+        if (phone.length === 10) {
+          phone = `549${phone}`;
+        }
+        window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+      }
+
+    } catch (err) {
+      console.error(err);
+      addToast('Error al confirmar seña', 'error');
     } finally {
       setProcessingId(null);
     }
@@ -269,8 +299,19 @@ export default function AppointmentsPage() {
 
             // Render PENDING slot
             return (
-              <div key={apt.id} className="glass-card rounded-2xl p-4 border border-gold/30">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div key={apt.id} className="glass-card rounded-2xl p-4 border border-gold/30 relative">
+                {!apt.senaPaid && (
+                  <div className="absolute -top-3 -right-2 bg-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-amber-300 animate-pulse">
+                    ⚠️ Falta verificar seña
+                  </div>
+                )}
+                {apt.senaPaid && (
+                  <div className="absolute -top-3 -right-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-green-400">
+                    ✅ Seña Pagada
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-sm font-bold text-amber-400">
                       {time}
@@ -284,15 +325,25 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="text-right sm:mr-4">
+                  <div className="flex flex-wrap items-center justify-end gap-2 mt-3 sm:mt-0">
+                    <div className="text-right sm:mr-4 w-full sm:w-auto mb-2 sm:mb-0">
                       <div className="text-gold font-bold">{formatPrice(apt.price)}</div>
                     </div>
+
+                    {!apt.senaPaid && (
+                      <button
+                        onClick={() => handleConfirmSena(apt)}
+                        disabled={processingId === apt.id}
+                        className="px-3 py-2 rounded-xl bg-green-500/10 text-green-400 text-sm font-bold hover:bg-green-500/20 border border-green-500/30 transition-all disabled:opacity-50 shadow-[0_0_15px_rgba(34,197,94,0.15)] flex-1 sm:flex-none"
+                      >
+                        {processingId === apt.id ? '...' : '✅ Validar Seña'}
+                      </button>
+                    )}
 
                     <button
                       onClick={() => handleCancel(apt)}
                       disabled={processingId === apt.id}
-                      className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-all disabled:opacity-50"
+                      className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-all disabled:opacity-50 flex-1 sm:flex-none"
                     >
                       Cancelar
                     </button>
@@ -300,7 +351,7 @@ export default function AppointmentsPage() {
                     <button
                       onClick={() => setPaymentModal(apt.id)}
                       disabled={processingId === apt.id}
-                      className="px-4 py-2 rounded-xl bg-gold text-bg-primary text-sm font-bold hover:bg-gold-light transition-all disabled:opacity-50 shadow-[0_0_15px_rgba(201,168,76,0.3)]"
+                      className="px-4 py-2 rounded-xl bg-gold text-bg-primary text-sm font-bold hover:bg-gold-light transition-all disabled:opacity-50 shadow-[0_0_15px_rgba(201,168,76,0.3)] flex-1 sm:flex-none"
                     >
                       {processingId === apt.id ? '...' : 'Cobrar'}
                     </button>

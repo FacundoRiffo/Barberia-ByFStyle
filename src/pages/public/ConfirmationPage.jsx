@@ -1,9 +1,13 @@
 import { Link, useLocation, Navigate } from 'react-router-dom';
+import { useState } from 'react';
 import { formatPrice } from '../../data/constants';
+import { useToast } from '../../context/ToastContext';
 
 export default function ConfirmationPage() {
   const location = useLocation();
   const appointment = location.state?.appointment;
+  const [copied, setCopied] = useState(false);
+  const { addToast } = useToast();
 
   if (!appointment) {
     return <Navigate to="/reservar" replace />;
@@ -37,10 +41,10 @@ export default function ConfirmationPage() {
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-bold font-['Playfair_Display',serif] text-white mb-2 animate-fade-in">
-          ¡Turno Confirmado!
+          Turno a Confirmar
         </h1>
-        <p className="text-gray-400 mb-8 animate-fade-in stagger-2">
-          Tu reserva ha sido registrada exitosamente.
+        <p className="text-gray-400 mb-8 animate-fade-in stagger-2 text-sm sm:text-base">
+          Tu reserva fue recibida. Falta verificar el pago de la seña.
         </p>
 
         {/* Ticket */}
@@ -97,12 +101,38 @@ export default function ConfirmationPage() {
 
           <div className="mt-4 p-3 bg-bg-primary rounded-xl border border-white/5">
             <p className="text-gray-400 text-xs text-center mb-2">Para confirmar el turno, transferir la seña a:</p>
-            <p className="text-white font-mono font-bold text-center bg-white/5 py-2 rounded-lg tracking-wider text-sm mb-1">
-              ALIAS: facu.riffo.
-            </p>
-            <p className="text-gray-500 text-xs text-center font-medium">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <p className="text-white font-mono font-bold text-center bg-white/5 px-4 py-2 rounded-lg tracking-wider text-sm">
+                ALIAS: facu.riffo.
+              </p>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText('facu.riffo.');
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-all"
+                title="Copiar Alias"
+              >
+                {copied ? '✅' : '📋'}
+              </button>
+            </div>
+            <p className="text-gray-500 text-xs text-center font-medium mb-3">
               A nombre de: Facundo Valentin Riffo
             </p>
+
+            <a 
+              href="https://www.mercadopago.com.ar/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#009EE3] hover:bg-[#0088C4] text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-[#009EE3]/20"
+              onClick={() => {
+                navigator.clipboard.writeText('facu.riffo.');
+                addToast('Alias copiado. Pégalo en la app de MercadoPago.', 'success');
+              }}
+            >
+              <span>🤝</span> Abrir Mercado Pago
+            </a>
           </div>
 
           {/* Decorative dashed line */}

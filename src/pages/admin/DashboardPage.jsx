@@ -21,6 +21,10 @@ function getWeekRange() {
   const start = new Date(now.setDate(diff));
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
+  
+  start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
+  end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
+
   return {
     start: start.toISOString().split('T')[0],
     end: end.toISOString().split('T')[0]
@@ -225,11 +229,13 @@ export default function DashboardPage() {
           {Array.from({ length: 7 }).map((_, i) => {
             const date = new Date();
             date.setDate(date.getDate() - 2 + i); // Empezar hace 2 días y seguir adelante
+            const originalDate = new Date(date);
+            date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
             const dStr = date.toISOString().split('T')[0];
             const isSelected = selectedDate === dStr;
             const isToday = dStr === todayStr;
-            const dayName = date.toLocaleDateString('es-AR', { weekday: 'short' });
-            const dayNumber = date.getDate();
+            const dayName = originalDate.toLocaleDateString('es-AR', { weekday: 'short' });
+            const dayNumber = originalDate.getDate();
             return (
               <button
                 key={dStr}

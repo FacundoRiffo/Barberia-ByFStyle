@@ -26,10 +26,12 @@ export default function BookingPage() {
 
   // Get min date (today) and max date (7 days from today)
   const todayDate = new Date();
+  todayDate.setMinutes(todayDate.getMinutes() - todayDate.getTimezoneOffset());
   const today = todayDate.toISOString().split('T')[0];
   
   const maxDateObj = new Date();
-  maxDateObj.setDate(todayDate.getDate() + 7);
+  maxDateObj.setDate(new Date().getDate() + 7);
+  maxDateObj.setMinutes(maxDateObj.getMinutes() - maxDateObj.getTimezoneOffset());
   const maxDate = maxDateObj.toISOString().split('T')[0];
 
   // Fetch booked slots when barber and date are selected
@@ -246,12 +248,14 @@ export default function BookingPage() {
                 <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-2">
                   {Array.from({ length: 7 }).map((_, i) => {
                     const dateObj = new Date();
-                    dateObj.setDate(todayDate.getDate() + i);
+                    dateObj.setDate(new Date().getDate() + i);
+                    const originalDateObj = new Date(dateObj); // Guardamos la fecha original para el día de la semana
+                    dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
                     const dStr = dateObj.toISOString().split('T')[0];
                     const isSelected = formData.date === dStr;
-                    const isSunday = dateObj.getDay() === 0;
-                    const dayName = dateObj.toLocaleDateString('es-AR', { weekday: 'short' });
-                    const dayNumber = dateObj.getDate();
+                    const isSunday = originalDateObj.getDay() === 0;
+                    const dayName = originalDateObj.toLocaleDateString('es-AR', { weekday: 'short' });
+                    const dayNumber = originalDateObj.getDate();
                     
                     return (
                       <button

@@ -427,37 +427,44 @@ export default function DashboardPage() {
           {/* Recent Transactions */}
           <div className="glass-card rounded-2xl p-6 mt-6">
             <h3 className="text-lg font-semibold text-white mb-4">📋 Últimas Transacciones</h3>
-            {data.transactions.length > 0 ? (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {data.transactions.slice(0, 10).map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between py-3 px-4 rounded-xl bg-bg-elevated border border-white/5"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">
-                        {t.type === 'appointment' ? '📅' : t.type === 'walkin' ? '⚡' : '💡'}
-                      </span>
-                      <div>
-                        <p className="text-white text-sm font-medium">
-                          {t.serviceName || t.concept || 'Ingreso'}
-                        </p>
-                        <p className="text-gray-500 text-xs">
-                          {t.type === 'appointment' ? 'Turno' : t.type === 'walkin' ? 'Walk-in' : 'Otro'} • {t.paymentMethod || ''}
-                        </p>
+            {(() => {
+              const allMovements = [
+                ...data.transactions.map((t) => ({ ...t, isExpense: false })),
+                ...data.expenses.map((e) => ({ ...e, isExpense: true, type: 'expense' })),
+              ].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+              return allMovements.length > 0 ? (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {allMovements.slice(0, 10).map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center justify-between py-3 px-4 rounded-xl bg-bg-elevated border border-white/5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">
+                          {t.isExpense ? '💸' : t.type === 'appointment' ? '📅' : t.type === 'walkin' ? '⚡' : '💡'}
+                        </span>
+                        <div>
+                          <p className="text-white text-sm font-medium">
+                            {t.serviceName || t.concept || (t.isExpense ? 'Gasto' : 'Ingreso')}
+                          </p>
+                          <p className="text-gray-500 text-xs">
+                            {t.isExpense ? `Gasto ${t.category === 'barberia' ? '(Barbería)' : '(Personal)'}` : t.type === 'appointment' ? 'Turno' : t.type === 'walkin' ? 'Walk-in' : 'Otro'} {t.paymentMethod ? `• ${t.paymentMethod}` : ''}
+                          </p>
+                        </div>
                       </div>
+                      <span className={`font-semibold text-sm ${t.isExpense ? 'text-red-400' : 'text-emerald-400'}`}>
+                        {t.isExpense ? '-' : '+'}{formatPrice(t.amount)}
+                      </span>
                     </div>
-                    <span className="text-emerald-400 font-semibold text-sm">
-                      +{formatPrice(t.amount)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600 text-sm text-center py-8">
-                Sin transacciones {viewMode === 'day' ? 'hoy' : 'este mes'}
-              </p>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600 text-sm text-center py-8">
+                  Sin transacciones {viewMode === 'day' ? 'hoy' : 'este mes'}
+                </p>
+              );
+            })()}
           </div>
         </>
       )}

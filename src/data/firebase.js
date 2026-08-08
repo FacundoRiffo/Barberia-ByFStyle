@@ -305,12 +305,15 @@ export async function deleteExpense(expenseId) {
 // HELPERS
 // ============================================================
 export function getTodayStr() {
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().split('T')[0];
 }
 
 export function getCurrentYearMonth() {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().substring(0, 7);
 }
 
 export { db };

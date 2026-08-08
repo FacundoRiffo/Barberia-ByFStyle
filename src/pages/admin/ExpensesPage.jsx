@@ -209,7 +209,7 @@ export default function ExpensesPage() {
         <div className="glass-card rounded-2xl p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              📋 Gastos de Hoy
+              📋 Gastos del Mes
             </h2>
             <div className="flex items-center gap-1 bg-bg-elevated rounded-lg p-0.5 border border-white/5">
               {[

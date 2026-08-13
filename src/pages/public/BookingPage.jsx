@@ -92,7 +92,7 @@ export default function BookingPage() {
         time: formData.time,
         yearMonth,
       });
-      addToast('¡Turno reservado con éxito!', 'success');
+      addToast('¡Reserva en revisión! Te enviaremos un WhatsApp al verificar el pago.', 'success');
       navigate('/confirmacion', {
         state: {
           appointment: {

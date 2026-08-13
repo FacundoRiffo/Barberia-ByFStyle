@@ -122,16 +122,14 @@ export default function ConfirmationPage() {
             </p>
 
             <a 
-              href="https://www.mercadopago.com.ar/"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="mercadopago://"
               className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#009EE3] hover:bg-[#0088C4] text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-[#009EE3]/20"
-              onClick={() => {
+              onClick={(e) => {
                 navigator.clipboard.writeText('facu.riffo.');
-                addToast('Alias copiado. Pégalo en la app de MercadoPago.', 'success');
+                addToast('Alias copiado. Pégalo en la app de Mercado Pago.', 'success');
               }}
             >
-              <span>🤝</span> Abrir Mercado Pago
+              <span>🤝</span> Abrir App de Mercado Pago
             </a>
           </div>
 

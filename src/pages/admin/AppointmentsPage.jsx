@@ -24,7 +24,7 @@ export default function AppointmentsPage() {
   const todayStr = getTodayStr();
   const [selectedDate, setSelectedDate] = useState(todayStr);
 
-  const allSlots = generateTimeSlots();
+  const allSlots = currentBarber ? generateTimeSlots(currentBarber.id, selectedDate) : [];
 
   useEffect(() => {
     loadAppointments();

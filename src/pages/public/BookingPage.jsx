@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BARBERS, SERVICES, PAYMENT_METHODS, getBarberServices, formatPrice, generateTimeSlots } from '../../data/constants';
+import { BARBERS, SERVICES, PAYMENT_METHODS, getBarberServices, formatPrice, generateTimeSlots, timeToMinutes } from '../../data/constants';
 import { addAppointment, getAppointmentsByBarberAndDate, isSlotAvailable } from '../../data/firebase';
 import { useToast } from '../../context/ToastContext';
 
@@ -11,7 +11,7 @@ export default function BookingPage() {
   const { addToast } = useToast();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [bookedSlots, setBookedSlots] = useState([]);
+  const [bookedAppointments, setBookedAppointments] = useState([]);
 
   const [formData, setFormData] = useState({
     clientName: '',
@@ -22,7 +22,7 @@ export default function BookingPage() {
     time: '',
   });
 
-  const allSlots = generateTimeSlots();
+  const allSlots = generateTimeSlots(formData.barberId, formData.date);
 
   // Get min date (today) and max date (7 days from today)
   const todayDate = new Date();
@@ -40,12 +40,12 @@ export default function BookingPage() {
       if (formData.barberId && formData.date) {
         try {
           const appointments = await getAppointmentsByBarberAndDate(formData.barberId, formData.date);
-          const taken = appointments
-            .filter((a) => a.status === 'pending' || a.status === 'blocked' || a.status === 'completed')
-            .map((a) => a.time);
-          setBookedSlots(taken);
+          const active = appointments.filter(
+            (a) => a.status === 'pending' || a.status === 'blocked' || a.status === 'completed'
+          );
+          setBookedAppointments(active);
         } catch {
-          setBookedSlots([]);
+          setBookedAppointments([]);
         }
       }
     }
@@ -70,7 +70,7 @@ export default function BookingPage() {
     setLoading(true);
     try {
       // Verify slot availability immediately before saving
-      const available = await isSlotAvailable(formData.barberId, formData.date, formData.time);
+      const available = await isSlotAvailable(formData.barberId, formData.date, formData.time, selectedService.duration);
       if (!available) {
         addToast('Lo sentimos, este turno acaba de ser reservado. Por favor, elegí otro horario.', 'error');
         setFormData({ ...formData, time: '' });
@@ -88,6 +88,7 @@ export default function BookingPage() {
         serviceId: formData.serviceId,
         serviceName: selectedService.name,
         price: selectedService.price,
+        duration: selectedService.duration,
         date: formData.date,
         time: formData.time,
         yearMonth,
@@ -285,14 +286,25 @@ export default function BookingPage() {
                   <label className="block text-sm text-gray-400 mb-3">Horario disponible</label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3">
                     {allSlots.map((slot) => {
-                      const isBooked = bookedSlots.includes(slot);
+                      const slotStart = timeToMinutes(slot);
+                      const slotEnd = slotStart + (selectedService?.duration || 40);
+                      
+                      // Check overlap with existing appointments
+                      const isBooked = bookedAppointments.some(a => {
+                        const apptStart = timeToMinutes(a.time);
+                        const apptEnd = apptStart + (a.duration || 40);
+                        return (slotStart < apptEnd && slotEnd > apptStart);
+                      });
+
+                      const isDisabled = isBooked;
+
                       return (
                         <button
                           key={slot}
-                          disabled={isBooked}
+                          disabled={isDisabled}
                           onClick={() => setFormData({ ...formData, time: slot })}
                           className={`py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                            ${isBooked
+                            ${isDisabled
                               ? 'bg-red-500/10 text-red-400/50 cursor-not-allowed line-through border border-red-500/10'
                               : formData.time === slot
                                 ? 'bg-gold text-black border border-gold'

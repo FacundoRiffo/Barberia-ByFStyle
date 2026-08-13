@@ -1,5 +1,6 @@
 // Firebase configuration for B&F Style
 import { initializeApp } from 'firebase/app';
+import { timeToMinutes } from './constants';
 import {
   getDatabase,
   ref,
@@ -148,15 +149,29 @@ export async function getAppointmentsByDate(dateStr) {
   return sortByField(docs, 'time', 'asc');
 }
 
-export async function isSlotAvailable(barberId, dateStr, time) {
+export async function isSlotAvailable(barberId, dateStr, time, duration = 40) {
   const q = query(ref(db, COLLECTIONS.APPOINTMENTS), orderByChild('date'), equalTo(dateStr));
   const snapshot = await withTimeout(get(q));
   let isAvailable = true;
+
   if (snapshot.exists()) {
+    const newStart = timeToMinutes(time);
+    const newEnd = newStart + duration;
+
     snapshot.forEach((child) => {
       const data = child.val();
-      if (data.barberId === barberId && data.time === time && (data.status === 'pending' || data.status === 'blocked' || data.status === 'completed')) {
-        isAvailable = false;
+      if (
+        data.barberId === barberId &&
+        (data.status === 'pending' || data.status === 'blocked' || data.status === 'completed')
+      ) {
+        const apptStart = timeToMinutes(data.time);
+        const apptDuration = data.duration || 40; // Default to 40 if old data
+        const apptEnd = apptStart + apptDuration;
+
+        // Check for overlap
+        if (newStart < apptEnd && newEnd > apptStart) {
+          isAvailable = false;
+        }
       }
     });
   }

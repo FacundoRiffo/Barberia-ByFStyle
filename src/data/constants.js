@@ -6,12 +6,36 @@ export const BARBERS = [
     name: 'Emanuel',
     avatar: '💈',
     services: ['corte-degrade', 'degrade-barba', 'barba-sola'],
+    phone: '5492664224260',
+    alias: 'Emaleal.25',
+    aliasName: 'Dyago Emanuel Eal',
+    schedule: {
+      0: [], // Sunday
+      1: [], // Monday
+      2: [{ start: '16:00', end: '22:00' }], // Tuesday
+      3: [{ start: '16:00', end: '22:00' }], // Wednesday
+      4: [{ start: '16:00', end: '22:00' }], // Thursday
+      5: [{ start: '16:00', end: '22:00' }], // Friday
+      6: [{ start: '16:00', end: '22:00' }], // Saturday
+    }
   },
   {
     id: 'facundo',
     name: 'Facundo',
     avatar: '✂️',
     services: ['corte-degrade', 'degrade-barba', 'barba-sola', 'global-corte', 'mechas-corte'],
+    phone: '5492665025201',
+    alias: 'facu.riffo.',
+    aliasName: 'Facundo Valentin Riffo',
+    schedule: {
+      0: [], // Sunday
+      1: [{ start: '16:00', end: '22:00' }], // Monday
+      2: [{ start: '10:00', end: '13:00' }, { start: '18:15', end: '22:00' }], // Tuesday
+      3: [{ start: '10:00', end: '13:00' }, { start: '16:00', end: '22:00' }], // Wednesday
+      4: [{ start: '10:00', end: '13:00' }, { start: '16:00', end: '19:20' }], // Thursday
+      5: [{ start: '10:00', end: '13:00' }, { start: '16:15', end: '22:00' }], // Friday
+      6: [{ start: '10:00', end: '13:00' }, { start: '16:15', end: '22:00' }], // Saturday
+    }
   },
 ];
 
@@ -20,28 +44,28 @@ export const SERVICES = [
     id: 'corte-degrade',
     name: 'Corte Degradé',
     price: 10000,
-    duration: 30, // minutos
+    duration: 40,
     icon: '✂️',
   },
   {
     id: 'degrade-barba',
     name: 'Corte Degradé + Barba',
     price: 12000,
-    duration: 45,
+    duration: 40,
     icon: '💇‍♂️',
   },
   {
     id: 'barba-sola',
     name: 'Barba Sola',
     price: 6000,
-    duration: 20,
+    duration: 40,
     icon: '🪒',
   },
   {
     id: 'global-corte',
     name: 'Global + Corte Completo',
     price: 45000,
-    duration: 90,
+    duration: 270,
     icon: '🌟',
     exclusive: 'facundo',
   },
@@ -49,7 +73,7 @@ export const SERVICES = [
     id: 'mechas-corte',
     name: 'Mechas + Corte',
     price: 35000,
-    duration: 75,
+    duration: 240,
     icon: '🎨',
     exclusive: 'facundo',
   },
@@ -65,13 +89,6 @@ export const EXPENSE_CATEGORIES = [
   { id: 'barberia', name: 'Gasto de la Barbería', icon: '🏪' },
   { id: 'personal', name: 'Gasto Personal', icon: '👤' },
 ];
-
-// Horarios de atención
-export const BUSINESS_HOURS = {
-  start: 15, // 15:00
-  end: 22,  // 22:00
-  slotMinutes: 30,
-};
 
 // Credenciales por defecto (en producción irían hasheadas)
 export const DEFAULT_CREDENTIALS = {
@@ -106,16 +123,46 @@ export function formatPrice(amount) {
   }).format(amount);
 }
 
+// Convert "HH:MM" to minutes
+export function timeToMinutes(timeStr) {
+  if (!timeStr) return 0;
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// Convert minutes to "HH:MM"
+export function minutesToTime(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 // Helper: generar slots de tiempo disponibles
-export function generateTimeSlots() {
+export function generateTimeSlots(barberId, dateStr) {
+  if (!barberId || !dateStr) return [];
+  
+  // Date must be parsed correctly in local timezone to get the correct day of week
+  const [year, month, day] = dateStr.split('-');
+  const dateObj = new Date(year, month - 1, day);
+  const dayOfWeek = dateObj.getDay();
+  
+  const barber = getBarberById(barberId);
+  if (!barber || !barber.schedule[dayOfWeek]) return [];
+
   const slots = [];
-  const { start, end, slotMinutes } = BUSINESS_HOURS;
-  for (let hour = start; hour < end; hour++) {
-    for (let min = 0; min < 60; min += slotMinutes) {
-      slots.push(
-        `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`
-      );
+  const slotDuration = 40; // 40 minutes per slot
+
+  const ranges = barber.schedule[dayOfWeek];
+  ranges.forEach((range) => {
+    let currentMins = timeToMinutes(range.start);
+    const endMins = timeToMinutes(range.end);
+    
+    // We add slots as long as a full slot (40m) fits within the end time
+    while (currentMins + slotDuration <= endMins) {
+      slots.push(minutesToTime(currentMins));
+      currentMins += slotDuration;
     }
-  }
+  });
+
   return slots;
 }

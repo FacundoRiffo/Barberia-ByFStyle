@@ -190,6 +190,61 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Reviews Section */}
+      <section className="py-20 sm:py-32 px-4 relative">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="text-gold text-sm font-medium tracking-[0.2em] uppercase">Testimonios</span>
+            <h2 className="text-3xl sm:text-5xl font-bold font-['Playfair_Display',serif] text-white mt-3">
+              Lo que dicen <span className="gold-text-gradient">nuestros clientes</span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                name: "Martín Gómez",
+                content: "Excelente atención de los chicos. El corte quedó espectacular y el ambiente de la barbería es de primera. Muy recomendado.",
+                rating: 5,
+                barber: "Facundo"
+              },
+              {
+                name: "Lucas Rodríguez",
+                content: "Fui por primera vez a hacerme la barba y me encantó. Te asesoran muy bien y el trabajo es impecable. Volveré seguro.",
+                rating: 5,
+                barber: "Emanuel"
+              },
+              {
+                name: "Alejandro Pérez",
+                content: "La mejor barbería de la zona lejos. Siempre te atienden a horario y con la mejor onda. Los cortes son un 10.",
+                rating: 5,
+                barber: "B&F Style"
+              }
+            ].map((review, idx) => (
+              <div key={idx} className="glass-card rounded-2xl p-8 relative hover:-translate-y-1 transition-all duration-300">
+                <div className="absolute top-4 right-6 text-6xl text-white/5 font-serif leading-none">"</div>
+                <div className="flex gap-1 mb-4">
+                  {[...Array(review.rating)].map((_, i) => (
+                    <span key={i} className="text-gold text-sm">★</span>
+                  ))}
+                </div>
+                <p className="text-gray-400 text-sm leading-relaxed mb-6 italic relative z-10">"{review.content}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold/20 to-gold/5 border border-gold/20 flex items-center justify-center text-white font-semibold">
+                    {review.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="text-white font-medium text-sm">{review.name}</h4>
+                    <p className="text-gray-500 text-[11px] uppercase tracking-wider">Atendido por {review.barber}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 sm:py-32 px-4">
         <div className="max-w-3xl mx-auto text-center">

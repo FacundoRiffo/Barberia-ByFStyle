@@ -1,6 +1,6 @@
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useState } from 'react';
-import { formatPrice } from '../../data/constants';
+import { formatPrice, getBarberById } from '../../data/constants';
 import { useToast } from '../../context/ToastContext';
 
 export default function ConfirmationPage() {
@@ -8,6 +8,14 @@ export default function ConfirmationPage() {
   const appointment = location.state?.appointment;
   const [copied, setCopied] = useState(false);
   const { addToast } = useToast();
+
+  const getMercadoPagoLink = () => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    if (/android/i.test(userAgent)) {
+      return "intent://#Intent;package=com.mercadolibre;scheme=mercadopago;end";
+    }
+    return "mercadopago://";
+  };
 
   if (!appointment) {
     return <Navigate to="/reservar" replace />;
@@ -25,7 +33,13 @@ export default function ConfirmationPage() {
   const whatsappMessage = encodeURIComponent(
     `Hola, soy ${appointment.clientName}. Acabo de reservar un turno para ${appointment.serviceName} con ${appointment.barberName} el día ${formattedDate} a las ${appointment.time} hs. Aquí te envío el comprobante de la seña.`
   );
-  const whatsappUrl = `https://wa.me/5492665025201?text=${whatsappMessage}`;
+  const barber = getBarberById(appointment.barberId) || {
+    phone: '5492665025201',
+    alias: 'facu.riffo.',
+    aliasName: 'Facundo Valentin Riffo'
+  };
+
+  const whatsappUrl = `https://wa.me/${barber.phone}?text=${whatsappMessage}`;
 
   return (
     <div className="min-h-screen bg-bg-primary pt-24 sm:pt-28 pb-16 px-4 flex items-center justify-center">
@@ -103,11 +117,11 @@ export default function ConfirmationPage() {
             <p className="text-gray-400 text-xs text-center mb-2">Para confirmar el turno, transferir la seña a:</p>
             <div className="flex items-center justify-center gap-2 mb-1">
               <p className="text-white font-mono font-bold text-center bg-white/5 px-4 py-2 rounded-lg tracking-wider text-sm">
-                ALIAS: facu.riffo.
+                ALIAS: {barber.alias}
               </p>
               <button 
                 onClick={() => {
-                  navigator.clipboard.writeText('facu.riffo.');
+                  navigator.clipboard.writeText(barber.alias);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
@@ -118,14 +132,14 @@ export default function ConfirmationPage() {
               </button>
             </div>
             <p className="text-gray-500 text-xs text-center font-medium mb-3">
-              A nombre de: Facundo Valentin Riffo
+              A nombre de: {barber.aliasName}
             </p>
 
             <a 
-              href="mercadopago://"
+              href={getMercadoPagoLink()}
               className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#009EE3] hover:bg-[#0088C4] text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-[#009EE3]/20"
               onClick={(e) => {
-                navigator.clipboard.writeText('facu.riffo.');
+                navigator.clipboard.writeText(barber.alias);
                 addToast('Alias copiado. Pégalo en la app de Mercado Pago.', 'success');
               }}
             >

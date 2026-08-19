@@ -43,13 +43,6 @@ export default function Navbar() {
             >
               Reservar Turno
             </Link>
-            <Link
-              to="/admin"
-              className="ml-3 px-5 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-[#c9a84c] to-[#a07c2e] text-black
-                hover:shadow-[0_0_20px_rgba(201,168,76,0.3)] transition-all duration-300 hover:scale-105"
-            >
-              Panel Barberos
-            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -83,13 +76,6 @@ export default function Navbar() {
                 ${isActive('/reservar') ? 'text-[#c9a84c] bg-[#c9a84c]/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               Reservar Turno
-            </Link>
-            <Link
-              to="/admin"
-              onClick={() => setMobileOpen(false)}
-              className="px-4 py-3 rounded-lg text-sm font-medium text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors"
-            >
-              Panel Barberos
             </Link>
           </div>
         </div>

@@ -37,6 +37,7 @@ const COLLECTIONS = {
   APPOINTMENTS: 'appointments',
   TRANSACTIONS: 'transactions',
   EXPENSES: 'expenses',
+  DEBTS: 'debts',
 };
 
 // ============================================================
@@ -98,6 +99,17 @@ export async function completeAppointment(appointmentId, paymentMethod) {
     update(docRef, {
       status: 'completed',
       paymentMethod,
+      completedAt: Date.now(),
+    })
+  );
+}
+
+export async function markAppointmentAsDebt(appointmentId) {
+  const docRef = ref(db, `${COLLECTIONS.APPOINTMENTS}/${appointmentId}`);
+  await withTimeout(
+    update(docRef, {
+      status: 'debt',
+      paymentMethod: 'fiado',
       completedAt: Date.now(),
     })
   );
@@ -314,6 +326,48 @@ export async function getExpensesByBarberAndDateRange(barberId, startDate, endDa
 export async function deleteExpense(expenseId) {
   const docRef = ref(db, `${COLLECTIONS.EXPENSES}/${expenseId}`);
   await withTimeout(remove(docRef));
+}
+
+// ============================================================
+// DEBTS (FIADOS)
+// ============================================================
+export async function addDebt(data) {
+  const newRef = push(ref(db, COLLECTIONS.DEBTS));
+  await withTimeout(
+    set(newRef, {
+      ...data,
+      status: 'pending',
+      createdAt: Date.now(),
+    })
+  );
+  return newRef.key;
+}
+
+export async function getPendingDebtsByBarber(barberId) {
+  // To get all pending debts, we query by barberId and then filter status client-side
+  const q = query(ref(db, COLLECTIONS.DEBTS), orderByChild('barberId'), equalTo(barberId));
+  const snapshot = await withTimeout(get(q));
+  const docs = [];
+  if (snapshot.exists()) {
+    snapshot.forEach((child) => {
+      const data = child.val();
+      if (data.status === 'pending') {
+        docs.push({ id: child.key, ...data });
+      }
+    });
+  }
+  return sortByField(docs, 'createdAt', 'desc');
+}
+
+export async function payDebt(debtId, paymentMethod) {
+  const docRef = ref(db, `${COLLECTIONS.DEBTS}/${debtId}`);
+  await withTimeout(
+    update(docRef, {
+      status: 'paid',
+      paymentMethod,
+      paidAt: Date.now(),
+    })
+  );
 }
 
 // ============================================================

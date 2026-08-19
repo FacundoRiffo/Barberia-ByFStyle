@@ -6,6 +6,7 @@ const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
   { to: '/admin/turnos', label: 'Turnos del Día', icon: '📅' },
   { to: '/admin/walkin', label: 'Registro Rápido', icon: '⚡' },
+  { to: '/admin/fiados', label: 'Fiados', icon: '📝' },
   { to: '/admin/gastos', label: 'Gastos', icon: '💸' },
 ];
 

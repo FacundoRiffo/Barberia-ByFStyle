@@ -5,12 +5,14 @@ import { formatPrice, getServiceById, PAYMENT_METHODS, generateTimeSlots } from 
 import {
   getAppointmentsByBarberAndDate,
   completeAppointment,
+  markAppointmentAsDebt,
   cancelAppointment,
   blockSlot,
   unblockSlot,
   addTransaction,
   confirmSena,
   getTodayStr,
+  addDebt,
 } from '../../data/firebase';
 
 export default function AppointmentsPage() {
@@ -20,6 +22,8 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [paymentModal, setPaymentModal] = useState(null);
+  const [debtModal, setDebtModal] = useState(null);
+  const [expectedDate, setExpectedDate] = useState('');
   
   const todayStr = getTodayStr();
   const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -68,6 +72,41 @@ export default function AppointmentsPage() {
     } catch (err) {
       console.error(err);
       addToast('Error al completar turno', 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function handleMarkAsDebt(appointment) {
+    if (!expectedDate) {
+      addToast('Por favor, seleccioná una fecha esperada de pago', 'error');
+      return;
+    }
+    
+    setProcessingId(appointment.id);
+    try {
+      // 1. Marcar el turno como "fiado" (no suma en transacciones como ingreso hoy)
+      await markAppointmentAsDebt(appointment.id);
+
+      // 2. Agregar a la colección de deudas
+      await addDebt({
+        barberId: currentBarber.id,
+        appointmentId: appointment.id,
+        clientName: appointment.clientName,
+        clientPhone: appointment.clientPhone,
+        serviceName: appointment.serviceName,
+        amount: appointment.price,
+        dateOfService: selectedDate,
+        expectedPaymentDate: expectedDate,
+      });
+
+      addToast(`Turno de ${appointment.clientName} anotado como fiado 📝`, 'success');
+      setDebtModal(null);
+      setExpectedDate('');
+      await loadAppointments();
+    } catch (err) {
+      console.error(err);
+      addToast('Error al anotar fiado', 'error');
     } finally {
       setProcessingId(null);
     }
@@ -270,13 +309,14 @@ export default function AppointmentsPage() {
               );
             }
 
-            // Render COMPLETED slot
-            if (apt.status === 'completed') {
+            // Render COMPLETED / DEBT slot
+            if (apt.status === 'completed' || apt.status === 'debt') {
+              const isDebt = apt.status === 'debt';
               return (
-                <div key={apt.id} className="glass-card rounded-2xl p-4 border border-green-500/20 bg-green-950/10 opacity-75">
+                <div key={apt.id} className={`glass-card rounded-2xl p-4 border ${isDebt ? 'border-amber-500/30 bg-amber-950/10' : 'border-green-500/20 bg-green-950/10'} opacity-75`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-sm font-bold text-green-400">
+                      <div className={`w-16 h-12 rounded-xl flex items-center justify-center text-sm font-bold ${isDebt ? 'bg-amber-500/10 text-amber-400' : 'bg-green-500/10 text-green-400'}`}>
                         {time}
                       </div>
                       <div>
@@ -285,11 +325,11 @@ export default function AppointmentsPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-green-400 font-bold mb-1">
+                      <div className={`${isDebt ? 'text-amber-400' : 'text-green-400'} font-bold mb-1`}>
                         {formatPrice(apt.price)}
                       </div>
-                      <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-md">
-                        Cobrado ✓
+                      <span className={`text-xs px-2 py-1 rounded-md ${isDebt ? 'bg-amber-500/20 text-amber-400' : 'bg-green-500/20 text-green-400'}`}>
+                        {isDebt ? 'Fiado 📝' : 'Cobrado ✓'}
                       </span>
                     </div>
                   </div>
@@ -362,7 +402,7 @@ export default function AppointmentsPage() {
                 {paymentModal === apt.id && (
                   <div className="mt-4 pt-4 border-t border-white/5 animate-fade-in">
                     <p className="text-sm text-gray-400 mb-3">Seleccioná el método de pago:</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 mb-3">
                       {PAYMENT_METHODS.map((pm) => (
                         <button
                           key={pm.id}
@@ -374,12 +414,57 @@ export default function AppointmentsPage() {
                           {pm.name}
                         </button>
                       ))}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-white/5">
+                      <button
+                        onClick={() => {
+                          setPaymentModal(null);
+                          setDebtModal(apt.id);
+                        }}
+                        className="px-4 py-2 rounded-xl text-amber-400 bg-amber-500/10 border border-amber-500/20 text-sm font-medium hover:bg-amber-500/20 transition-all"
+                      >
+                        📝 Anotar como Fiado
+                      </button>
                       <button
                         onClick={() => setPaymentModal(null)}
-                        className="px-4 py-2 rounded-xl text-gray-500 text-sm hover:text-white transition-all ml-auto"
+                        className="px-4 py-2 rounded-xl text-gray-500 text-sm hover:text-white transition-all"
                       >
                         Cancelar
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Modal de Fiado */}
+                {debtModal === apt.id && (
+                  <div className="mt-4 pt-4 border-t border-white/5 animate-fade-in">
+                    <p className="text-sm text-gray-400 mb-3">¿Cuándo te va a pagar?</p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input 
+                        type="date" 
+                        value={expectedDate}
+                        min={todayStr}
+                        onChange={(e) => setExpectedDate(e.target.value)}
+                        className="flex-1 px-4 py-2 rounded-xl bg-bg-elevated border border-white/10 text-white text-sm"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleMarkAsDebt(apt)}
+                          disabled={processingId === apt.id || !expectedDate}
+                          className="flex-1 sm:flex-none px-6 py-2 rounded-xl bg-amber-500 text-black text-sm font-bold hover:bg-amber-400 transition-all disabled:opacity-50"
+                        >
+                          {processingId === apt.id ? '...' : 'Guardar Fiado'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDebtModal(null);
+                            setExpectedDate('');
+                          }}
+                          className="px-4 py-2 rounded-xl text-gray-500 text-sm hover:text-white transition-all bg-white/5"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

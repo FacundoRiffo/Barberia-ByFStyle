@@ -12,7 +12,7 @@ export default function ConfirmationPage() {
   const getMercadoPagoLink = () => {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     if (/android/i.test(userAgent)) {
-      return "intent://#Intent;package=com.mercadolibre;scheme=mercadopago;end";
+      return "intent://#Intent;scheme=mercadopago;package=com.mercadopago.android.px;S.browser_fallback_url=https://www.mercadopago.com;end";
     }
     return "mercadopago://";
   };

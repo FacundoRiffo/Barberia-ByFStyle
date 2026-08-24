@@ -24,6 +24,21 @@ export default function BookingPage() {
 
   const allSlots = generateTimeSlots(formData.barberId, formData.date);
 
+// Generate list of selectable dates (Mon‑Sat) starting from today, skipping Sundays
+const getAvailableDates = () => {
+  const dates = [];
+  const start = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const day = d.getDay();
+    if (day === 0) continue; // skip Sunday
+    dates.push(d);
+    if (day === 6) break; // stop after Saturday
+  }
+  return dates;
+};
+
   // Get min date (today) and max date (7 days from today)
   const todayDate = new Date();
   todayDate.setMinutes(todayDate.getMinutes() - todayDate.getTimezoneOffset());
@@ -247,38 +262,36 @@ export default function BookingPage() {
               <div>
                 <label className="block text-sm text-gray-400 mb-3">Fecha</label>
                 <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-2">
-                  {Array.from({ length: 7 }).map((_, i) => {
-                    const dateObj = new Date();
-                    dateObj.setDate(new Date().getDate() + i);
-                    const originalDateObj = new Date(dateObj); // Guardamos la fecha original para el día de la semana
-                    dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
-                    const dStr = dateObj.toISOString().split('T')[0];
+                                    {getAvailableDates().map((dateObj, idx) => {
+                    const d = new Date(dateObj);
+                    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                    const dStr = d.toISOString().split('T')[0];
                     const isSelected = formData.date === dStr;
-                    const isSunday = originalDateObj.getDay() === 0;
-                    const dayName = originalDateObj.toLocaleDateString('es-AR', { weekday: 'short' });
-                    const dayNumber = originalDateObj.getDate();
-                    
+                    const dayName = dateObj.toLocaleDateString('es-AR', { weekday: 'short' });
+                    const dayNumber = dateObj.getDate();
+                    const isSunday = dateObj.getDay() === 0;
                     return (
                       <button
                         key={dStr}
                         disabled={isSunday}
                         onClick={() => setFormData({ ...formData, date: dStr, time: '' })}
                         className={`min-w-[70px] flex flex-col items-center justify-center py-3 rounded-xl border transition-all
-                          ${isSunday ? 'opacity-30 cursor-not-allowed bg-white/5 border-white/5' 
+                          ${isSunday ? 'opacity-30 cursor-not-allowed bg-white/5 border-white/5'
                           : isSelected
                             ? 'bg-gold/10 border-gold text-gold shadow-md'
-                            : 'bg-bg-elevated border-white/5 text-gray-400 hover:border-gold/30 hover:text-white'
-                          }`}
+                            : 'bg-bg-elevated border-white/5 text-gray-400 hover:border-gold/30 hover:text-white'}`}
                       >
                         <span className="text-xs font-medium uppercase tracking-wider mb-1">
-                          {i === 0 ? 'Hoy' : dayName}
+                          {idx === 0 ? 'Hoy' : dayName}
                         </span>
-                        <span className={`text-xl font-bold ${isSelected ? 'text-white' : ''}`}>
+                        <span className={`text-xl font-bold ${isSelected ? 'text-white' : ''}`}
+                        >
                           {dayNumber}
                         </span>
                       </button>
                     );
                   })}
+                  {/* Legacy date loop removed – replaced by getAvailableDates() helper */}
                 </div>
               </div>
               {formData.date && (

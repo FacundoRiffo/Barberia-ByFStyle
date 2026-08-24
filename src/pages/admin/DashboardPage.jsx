@@ -17,11 +17,23 @@ import {
 function getWeekRange() {
   const now = new Date();
   const day = now.getDay();
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  // Determine Monday of the current week (if today is Sunday, go back 6 days)
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
   const start = new Date(now.setDate(diff));
+  // End should be Saturday (Monday + 5 days)
   const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-  
+  end.setDate(end.getDate() + 5);
+  // Ensure we stay within the current month
+  const monthEnd = new Date(start.getFullYear(), start.getMonth() + 1, 0); // last day of month
+  if (end > monthEnd) {
+    end.setTime(monthEnd.getTime());
+  }
+  // Clamp start to month start
+  const monthStart = new Date(start.getFullYear(), start.getMonth(), 1);
+  if (start < monthStart) {
+    start.setTime(monthStart.getTime());
+  }
+  // Normalize to UTC dates (remove timezone offset)
   start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
   end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
 

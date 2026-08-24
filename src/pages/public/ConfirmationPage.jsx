@@ -12,8 +12,8 @@ export default function ConfirmationPage() {
   const getMercadoPagoLink = () => {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     if (/android/i.test(userAgent)) {
-      // Direct intent to open Mercado Pago Android app
-      return "intent://pay#Intent;scheme=mercadopago;package=com.mercadopago.android.px;end";
+      // Use the custom scheme to open the Mercado Pago app directly
+      return "mercadopago://";
     }
     return "mercadopago://";
   };

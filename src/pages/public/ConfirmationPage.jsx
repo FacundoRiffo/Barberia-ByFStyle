@@ -12,8 +12,8 @@ export default function ConfirmationPage() {
   const getMercadoPagoLink = () => {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     if (/android/i.test(userAgent)) {
-      // Use the custom scheme to open the Mercado Pago app directly
-      return "mercadopago://";
+      // Intent that opens Mercado Pago app, with fallback to web if not installed
+      return "intent://#Intent;scheme=mercadopago;package=com.mercadopago.android.px;S.browser_fallback_url=https://www.mercadopago.com;end";
     }
     return "mercadopago://";
   };
@@ -139,9 +139,8 @@ export default function ConfirmationPage() {
             <a 
               href={getMercadoPagoLink()}
               className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#009EE3] hover:bg-[#0088C4] text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-[#009EE3]/20"
-              onClick={(e) => {
-                navigator.clipboard.writeText(barber.alias);
-                addToast('Alias copiado. Pégalo en la app de Mercado Pago.', 'success');
+              onClick={() => {
+                addToast('Redirigiendo a la app de Mercado Pago...', 'info');
               }}
             >
               <span>🤝</span> Abrir App de Mercado Pago

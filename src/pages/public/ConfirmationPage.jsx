@@ -20,28 +20,55 @@ export default function ConfirmationPage() {
 
   if (!appointment) {
     return <Navigate to="/reservar" replace />;
-  }
+  } // Fin de la función getMercadoPagoLink
 
-  const formattedDate = new Date(appointment.date + 'T12:00').toLocaleDateString('es-AR', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  // -------------------------------------------------
+  // Formateamos la fecha del turno (formato Argentina)
+  // -------------------------------------------------
+  const formattedDate = new Date(appointment.date + 'T12:00')
+    .toLocaleDateString('es-AR', {
+      // día de la semana abreviado, ej: lun, mar
+      weekday: 'short',
+      // día del mes
+      day: 'numeric',
+      // mes abreviado
+      month: 'short',
+      // año completo
+      year: 'numeric',
+    });
 
+  // -------------------------------------------------
+  // Calculamos la seña: 30 % del precio total
+  // -------------------------------------------------
   const sena = appointment.price * 0.3;
 
+  // -------------------------------------------------
+  // Mensaje que se enviará por WhatsApp al barbero
+  // -------------------------------------------------
   const whatsappMessage = encodeURIComponent(
     `Hola, soy ${appointment.clientName}. Acabo de reservar un turno para ${appointment.serviceName} con ${appointment.barberName} el día ${formattedDate} a las ${appointment.time} hs. Aquí te envío el comprobante de la seña.`
   );
+
+  // -------------------------------------------------
+  // Datos del barbero (o valores por defecto)
+  // -------------------------------------------------
   const barber = getBarberById(appointment.barberId) || {
+    // teléfono en formato internacional
     phone: '5492665025201',
+    // alias de la cuenta Mercado Pago
     alias: 'facu.riffo.',
+    // nombre del titular del alias
     aliasName: 'Facundo Valentin Riffo'
   };
 
+  // -------------------------------------------------
+  // URL que abre WhatsApp con el mensaje pre‑llenado
+  // -------------------------------------------------
   const whatsappUrl = `https://wa.me/${barber.phone}?text=${whatsappMessage}`;
 
+  // -------------------------------------------------
+  // Renderizado del componente (encabezado y animación)
+  // -------------------------------------------------
   return (
     <div className="min-h-screen bg-bg-primary pt-24 sm:pt-28 pb-16 px-4 flex items-center justify-center">
       <div className="max-w-md w-full text-center">

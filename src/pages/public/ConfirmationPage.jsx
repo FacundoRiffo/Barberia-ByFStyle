@@ -9,18 +9,41 @@ export default function ConfirmationPage() {
   const [copied, setCopied] = useState(false);
   const { addToast } = useToast();
 
-  const getMercadoPagoLink = () => {
+  const handleOpenMercadoPago = () => {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    if (/android/i.test(userAgent)) {
-      // Intent that opens Mercado Pago app, with fallback to web if not installed
-      return "intent://#Intent;scheme=mercadopago;package=com.mercadopago.android.px;S.browser_fallback_url=https://www.mercadopago.com;end";
+    const isAndroid = /android/i.test(userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (isAndroid) {
+      // Intent URI con el package correcto (com.mercadopago.wallet) y fallback al Play Store
+      const intentUrl = "intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.mercadopago.wallet;end";
+      window.location.href = intentUrl;
+      addToast('Abriendo Mercado Pago...', 'info');
+    } else if (isIOS) {
+      // En iOS el scheme mercadopago:// funciona para abrir la app
+      const appUrl = "mercadopago://";
+      const appStoreUrl = "https://apps.apple.com/ar/app/mercado-pago/id925436649";
+      
+      window.location.href = appUrl;
+      addToast('Abriendo Mercado Pago...', 'info');
+      
+      // Si después de 1.5s no se fue de la página, la app no está instalada → App Store
+      setTimeout(() => {
+        if (!document.hidden) {
+          addToast('App no encontrada. Redirigiendo a la App Store...', 'warning');
+          window.location.href = appStoreUrl;
+        }
+      }, 1500);
+    } else {
+      // En PC/Desktop no hay app nativa, intentar abrir la versión web
+      addToast('Abriendo Mercado Pago en el navegador...', 'info');
+      window.open("https://www.mercadopago.com.ar/transfer", "_blank");
     }
-    return "mercadopago://";
   };
 
   if (!appointment) {
     return <Navigate to="/reservar" replace />;
-  } // Fin de la función getMercadoPagoLink
+  }
 
   // -------------------------------------------------
   // Formateamos la fecha del turno (formato Argentina)
@@ -163,15 +186,13 @@ export default function ConfirmationPage() {
               A nombre de: {barber.aliasName}
             </p>
 
-            <a 
-              href={getMercadoPagoLink()}
-              className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#009EE3] hover:bg-[#0088C4] text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-[#009EE3]/20"
-              onClick={() => {
-                addToast('Redirigiendo a la app de Mercado Pago...', 'info');
-              }}
+            <button 
+              type="button"
+              onClick={handleOpenMercadoPago}
+              className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#009EE3] hover:bg-[#0088C4] text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-[#009EE3]/20 cursor-pointer"
             >
               <span>🤝</span> Abrir App de Mercado Pago
-            </a>
+            </button>
           </div>
 
           {/* Decorative dashed line */}

@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { BARBERS, DEFAULT_CREDENTIALS } from '../../data/constants';
+import { BARBERS, verifyPassword } from '../../data/constants';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+
+// Configuración de rate limiting
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_SECONDS = 30;
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -13,9 +17,19 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [lockTimer, setLockTimer] = useState(0);
+  const attemptsRef = useRef(0);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
+    // Rate limiting: bloquear si hay demasiados intentos
+    if (locked) {
+      setError(`Demasiados intentos. Esperá ${lockTimer}s.`);
+      return;
+    }
+
     if (!selectedBarber) {
       setError('Seleccioná un barbero');
       return;
@@ -28,17 +42,38 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // Simulate small delay for UX
-    await new Promise((r) => setTimeout(r, 500));
+    const isValid = await verifyPassword(selectedBarber.id, password);
 
-    if (DEFAULT_CREDENTIALS[selectedBarber.id] === password) {
+    if (isValid) {
+      attemptsRef.current = 0;
       login(selectedBarber);
       addToast(`¡Bienvenido, ${selectedBarber.name}!`, 'success');
       navigate('/admin/dashboard');
     } else {
-      setError('Contraseña incorrecta');
+      attemptsRef.current += 1;
+      
+      if (attemptsRef.current >= MAX_ATTEMPTS) {
+        // Bloquear por LOCKOUT_SECONDS
+        setLocked(true);
+        let remaining = LOCKOUT_SECONDS;
+        setLockTimer(remaining);
+        const interval = setInterval(() => {
+          remaining -= 1;
+          setLockTimer(remaining);
+          if (remaining <= 0) {
+            clearInterval(interval);
+            setLocked(false);
+            attemptsRef.current = 0;
+          }
+        }, 1000);
+        setError(`Demasiados intentos fallidos. Bloqueado por ${LOCKOUT_SECONDS}s.`);
+        addToast('Cuenta bloqueada temporalmente', 'error');
+      } else {
+        const remaining = MAX_ATTEMPTS - attemptsRef.current;
+        setError(`Contraseña incorrecta (${remaining} intento${remaining !== 1 ? 's' : ''} restante${remaining !== 1 ? 's' : ''})`);
+        addToast('Contraseña incorrecta', 'error');
+      }
       setPassword('');
-      addToast('Contraseña incorrecta', 'error');
     }
     setLoading(false);
   };
@@ -132,13 +167,15 @@ export default function LoginPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={!selectedBarber || !password.trim() || loading}
+            disabled={!selectedBarber || !password.trim() || loading || locked}
             className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-gold to-gold-dark text-black
               hover:shadow-[0_0_20px_rgba(201,168,76,0.3)] transition-all duration-300
               disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:shadow-none
               flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {locked ? (
+              `🔒 Bloqueado (${lockTimer}s)`
+            ) : loading ? (
               <>
                 <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                 Verificando...

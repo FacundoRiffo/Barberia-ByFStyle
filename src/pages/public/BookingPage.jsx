@@ -71,9 +71,23 @@ const getAvailableDates = () => {
   const selectedService = SERVICES.find((s) => s.id === formData.serviceId);
   const availableServices = formData.barberId ? getBarberServices(formData.barberId) : [];
 
+  // Sanitizar input: prevenir inyección de HTML/scripts
+  const sanitizeInput = (value) => {
+    return value.replace(/<[^>]*>/g, '').trim();
+  };
+
+  // Validar formato de teléfono (solo números, guiones, espacios y +)
+  const isValidPhone = (phone) => {
+    return /^[\d\s\-+()]{7,20}$/.test(phone.trim());
+  };
+
   const canNext = () => {
     switch (step) {
-      case 0: return formData.clientName.trim() && formData.clientPhone.trim();
+      case 0: {
+        const name = sanitizeInput(formData.clientName);
+        const phone = formData.clientPhone.trim();
+        return name.length >= 2 && name.length <= 50 && phone && isValidPhone(phone);
+      }
       case 1: return formData.barberId;
       case 2: return formData.serviceId;
       case 3: return formData.date && formData.time;
@@ -84,6 +98,23 @@ const getAvailableDates = () => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      // Validación final antes de enviar
+      const clientName = sanitizeInput(formData.clientName);
+      const clientPhone = formData.clientPhone.trim();
+
+      if (clientName.length < 2 || !isValidPhone(clientPhone)) {
+        addToast('Datos inválidos. Verificá nombre y teléfono.', 'error');
+        setLoading(false);
+        return;
+      }
+
+      // Validar que la fecha no sea pasada
+      if (formData.date < today) {
+        addToast('No podés reservar en una fecha pasada.', 'error');
+        setLoading(false);
+        return;
+      }
+
       // Verify slot availability immediately before saving
       const available = await isSlotAvailable(formData.barberId, formData.date, formData.time, selectedService.duration);
       if (!available) {
@@ -96,8 +127,8 @@ const getAvailableDates = () => {
 
       const yearMonth = formData.date.substring(0, 7);
       const appointmentId = await addAppointment({
-        clientName: formData.clientName.trim(),
-        clientPhone: formData.clientPhone.trim(),
+        clientName: clientName,
+        clientPhone: clientPhone,
         barberId: formData.barberId,
         barberName: selectedBarber.name,
         serviceId: formData.serviceId,

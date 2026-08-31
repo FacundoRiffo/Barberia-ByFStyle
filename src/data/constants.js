@@ -90,11 +90,28 @@ export const EXPENSE_CATEGORIES = [
   { id: 'personal', name: 'Gasto Personal', icon: '👤' },
 ];
 
-// Credenciales por defecto (en producción irían hasheadas)
-export const DEFAULT_CREDENTIALS = {
-  emanuel: 'emanuel2024',
-  facundo: 'facundo2024',
+// Credenciales hasheadas (SHA-256) — las contraseñas originales NO están en el código
+const CREDENTIAL_HASHES = {
+  emanuel: '3c54d748ea637f2d68a19d9ab3204a881e69a706660b16974cc7306ea00582ed',
+  facundo: '727c1b1c138181fe62cf842d12042b01edebc80142e3ab6f11d589e8d3b51d5f',
 };
+
+// Función de hash usando Web Crypto API (SHA-256)
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Verificar contraseña: hashea el input y compara con el hash almacenado
+export async function verifyPassword(barberId, password) {
+  const storedHash = CREDENTIAL_HASHES[barberId];
+  if (!storedHash) return false;
+  const inputHash = await hashPassword(password);
+  return inputHash === storedHash;
+}
 
 // Helper: obtener servicios de un barbero
 export function getBarberServices(barberId) {

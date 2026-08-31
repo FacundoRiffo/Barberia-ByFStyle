@@ -67,14 +67,46 @@ function sortByField(docs, field, direction = 'asc') {
 // APPOINTMENTS
 // ============================================================
 export async function addAppointment(data) {
+  // Validación de datos antes de escribir en Firebase
+  const requiredFields = ['clientName', 'clientPhone', 'barberId', 'date', 'time', 'serviceId'];
+  for (const field of requiredFields) {
+    if (!data[field] || typeof data[field] !== 'string' || data[field].trim().length === 0) {
+      throw new Error(`Campo requerido faltante: ${field}`);
+    }
+  }
+
+  // Validar longitudes máximas
+  if (data.clientName.length > 50) throw new Error('Nombre demasiado largo');
+  if (data.clientPhone.length > 20) throw new Error('Teléfono demasiado largo');
+
+  // Validar formato de fecha (YYYY-MM-DD)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date)) throw new Error('Formato de fecha inválido');
+
+  // Validar formato de hora (HH:MM)
+  if (!/^\d{2}:\d{2}$/.test(data.time)) throw new Error('Formato de hora inválido');
+
+  // Validar que el precio sea un número positivo
+  if (typeof data.price !== 'number' || data.price <= 0) throw new Error('Precio inválido');
+
+  // Sanitizar: solo guardar campos permitidos
+  const sanitizedData = {
+    clientName: data.clientName.replace(/<[^>]*>/g, '').trim(),
+    clientPhone: data.clientPhone.trim(),
+    barberId: data.barberId,
+    barberName: data.barberName || '',
+    serviceId: data.serviceId,
+    serviceName: data.serviceName || '',
+    price: data.price,
+    duration: data.duration || 40,
+    date: data.date,
+    time: data.time,
+    yearMonth: data.yearMonth || data.date.substring(0, 7),
+    status: 'pending',
+    createdAt: Date.now(),
+  };
+
   const newRef = push(ref(db, COLLECTIONS.APPOINTMENTS));
-  await withTimeout(
-    set(newRef, {
-      ...data,
-      status: 'pending',
-      createdAt: Date.now(),
-    })
-  );
+  await withTimeout(set(newRef, sanitizedData));
   return newRef.key;
 }
 

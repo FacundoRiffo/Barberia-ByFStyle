@@ -15,31 +15,25 @@ import {
 } from '../../data/firebase';
 
 function getWeekRange() {
-  const now = new Date();
-  const day = now.getDay();
-  // Determine Monday of the current week (if today is Sunday, go back 6 days)
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-  const start = new Date(now.setDate(diff));
-  // End should be Saturday (Monday + 5 days)
-  const end = new Date(start);
-  end.setDate(end.getDate() + 5);
-  // Ensure we stay within the current month
-  const monthEnd = new Date(start.getFullYear(), start.getMonth() + 1, 0); // last day of month
-  if (end > monthEnd) {
-    end.setTime(monthEnd.getTime());
-  }
-  // Clamp start to month start
-  const monthStart = new Date(start.getFullYear(), start.getMonth(), 1);
-  if (start < monthStart) {
-    start.setTime(monthStart.getTime());
-  }
-  // Normalize to UTC dates (remove timezone offset)
-  start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
-  end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
+  const today = new Date();
+  const day = today.getDay();
+  // Calcular lunes de esta semana (si hoy es domingo, retroceder 6 días)
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() + mondayOffset);
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 5); // Sábado = Lunes + 5
+
+  // Normalizar a formato YYYY-MM-DD sin problemas de timezone
+  const toDateStr = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  };
 
   return {
-    start: start.toISOString().split('T')[0],
-    end: end.toISOString().split('T')[0]
+    start: toDateStr(start),
+    end: toDateStr(end)
   };
 }
 

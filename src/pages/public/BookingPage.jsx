@@ -140,6 +140,29 @@ const getAvailableDates = () => {
         yearMonth,
       });
       addToast('¡Reserva en revisión! Te enviaremos un WhatsApp al verificar el pago.', 'success');
+
+      // Notificar al barbero por WhatsApp
+      if (selectedBarber?.phone) {
+        const formattedDate = new Date(formData.date + 'T12:00').toLocaleDateString('es-AR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long'
+        });
+        const sena = selectedService.price * 0.3;
+        const notifMsg = encodeURIComponent(
+          `📋 *NUEVO TURNO AGENDADO*\n\n` +
+          `👤 Cliente: ${clientName}\n` +
+          `📞 Tel: ${clientPhone}\n` +
+          `✂️ Servicio: ${selectedService.name}\n` +
+          `📅 Fecha: ${formattedDate}\n` +
+          `🕐 Hora: ${formData.time} hs\n` +
+          `💰 Precio: $${selectedService.price.toLocaleString('es-AR')}\n` +
+          `⚠️ Seña pendiente: $${sena.toLocaleString('es-AR')}\n\n` +
+          `_Reserva automática desde la web B&F Style_`
+        );
+        window.open(`https://wa.me/${selectedBarber.phone}?text=${notifMsg}`, '_blank');
+      }
+
       navigate('/confirmacion', {
         state: {
           appointment: {

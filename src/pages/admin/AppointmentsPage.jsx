@@ -155,7 +155,17 @@ export default function AppointmentsPage() {
           day: 'numeric',
           month: 'long'
         });
-        const msg = encodeURIComponent(`Hola ${appointment.clientName}, te escribimos de B&F Style. Lamentablemente tuvimos que cancelar tu turno de ${appointment.serviceName} el día ${formattedDate} a las ${appointment.time} hs. Por favor, contáctanos para reprogramar.`);
+
+        let msgText;
+        if (appointment.senaPaid) {
+          // Si pagó la seña, pedir alias para devolver
+          const sena = appointment.price * 0.3;
+          msgText = `Hola ${appointment.clientName}, te escribimos de B&F Style. Lamentablemente tuvimos que cancelar tu turno de ${appointment.serviceName} el día ${formattedDate} a las ${appointment.time} hs.\n\nComo ya abonaste la seña ($${sena.toLocaleString('es-AR')}), necesitamos tu *alias de Mercado Pago* para hacerte la devolución. Por favor respondé con tu alias. ¡Disculpá las molestias!`;
+        } else {
+          msgText = `Hola ${appointment.clientName}, te escribimos de B&F Style. Lamentablemente tuvimos que cancelar tu turno de ${appointment.serviceName} el día ${formattedDate} a las ${appointment.time} hs. Por favor, contáctanos para reprogramar. ¡Disculpá las molestias!`;
+        }
+
+        const msg = encodeURIComponent(msgText);
         let phone = appointment.clientPhone.replace(/\D/g, '');
         if (phone.length === 10) {
           phone = `549${phone}`;
